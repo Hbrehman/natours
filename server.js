@@ -13,10 +13,10 @@ mongoose
   .connect(process.env.DATABASE_LOCAL, {
     useNewUrlParser: true,
     useCreateIndex: true,
-    useFindAndModify: false
+    useFindAndModify: false,
+    useUnifiedTopology: true
   })
-  .then(con => {
-    console.log(con.connection);
+  .then(() => {
     console.log('DB connection successfull');
   })
   .catch(err => {
