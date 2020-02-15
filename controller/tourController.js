@@ -19,7 +19,52 @@ exports.createNewTour = async (req, res) => {
 
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find();
+    // 1) Build query
+    // 1A) Filtering
+    const queryObj = { ...req.query };
+    const excludeFields = ['page', 'sort', 'limit', 'fields'];
+    excludeFields.forEach(el => delete queryObj[el]);
+
+    // console.log(req.query, queryObj);
+
+    // 1B) Advance Filtering
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
+    queryStr = JSON.parse(queryStr);
+    // console.log(queryStr);
+    // { difficulty: 'easy', duration: { $gte: 5 } }
+    // {difficult: 'easy', duration: { gte: 5 }}
+
+    // gte, gt, lte, lt
+
+    const query = Tour.find(queryStr);
+
+    // 2) Sorting
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(',').join('');
+      query.sort(sortBy);
+    } else {
+      query.sort('-createAt');
+    }
+
+    // 3) Field limiting
+    if (req.query.fields) {
+      const requiredFields = req.query.fields.split(',').join(' ');
+      query.select(requiredFields);
+    } else {
+      query.select('-__v');
+    }
+    // Another way to query using mongoose methods
+    // const query = Tour.find()
+    //   .where('difficulty')
+    //   .equals('easy')
+    //   .where('duration')
+    //   .equals(5);
+
+    // Execute query
+    const tours = await query;
+
+    // SEND RESPONSE
     res.json({
       status: 'success',
       results: tours.length,
