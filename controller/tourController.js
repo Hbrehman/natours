@@ -87,7 +87,7 @@ exports.getAllTours = catchAsync(async (req, res) => {
   const tours = await apiFeatuer.query;
 
   // SEND RESPONSE
-  res.json({
+  res.status(200).json({
     status: 'success',
     results: tours.length,
     data: {
