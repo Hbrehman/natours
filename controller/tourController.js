@@ -133,7 +133,7 @@ exports.deleteTour = catchAsync(async (req, res, next) => {
   if (!tour) {
     return next(new AppError('No tour found with that ID', 404));
   }
-  res.status(204);
+  res.status(204).send('');
 });
 
 exports.getTourStats = catchAsync(async (req, res, next) => {

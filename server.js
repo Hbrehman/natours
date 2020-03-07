@@ -9,10 +9,10 @@ process.on('uncaughtException', err => {
 dotenv.config({ path: './config.env' });
 const app = require('./index');
 
-const DB = process.env.DATABASE.replace(
-  '<PASSWORD>',
-  process.env.DATABASE_PASSWORD
-);
+// const DB = process.env.DATABASE.replace(
+//   '<PASSWORD>',
+//   process.env.DATABASE_PASSWORD
+// );
 
 mongoose
   .connect(process.env.DATABASE_LOCAL, {
@@ -41,8 +41,3 @@ process.on('unhandledRejection', err => {
     process.exit(1);
   });
 });
-
-/*  "engines": {
-    "node": ">=6.0.0"
-  },
-*/
