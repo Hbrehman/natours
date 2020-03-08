@@ -15,6 +15,19 @@ const signToken = id => {
 
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
+
+  const cookieOptions = {
+    expires: new Date(
+      Date.now + process.env.JWT_COOKIE_EXPIRES_IN * 90 * 24 * 60 * 60 * 1000
+    ),
+    // secure: true, // because of this option set to true, the communication will only happen on https connection on http communication will not happen
+    httpOnly: true // we set it true because the cookie can newer be accessed and modified by the browser anyway. it prevents xss attcks
+  };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  res.cookie('jwt', token, cookieOptions);
+
+  user.password = undefined;
+
   res.status(statusCode).json({
     status: 'success',
     token,
@@ -47,12 +60,12 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Please provide email and password..', 400));
   }
   // 2) Check if user exists and password is correct
-  const user = await User.findOne({ email }).select('+password');
+  let user = await User.findOne({ email }).select('+password');
 
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
-
+  user = user.select('-password');
   // 3) if everything ok, send token to client
   createSendToken(user, 200, res);
 });
