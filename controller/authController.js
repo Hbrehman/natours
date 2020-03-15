@@ -60,18 +60,18 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Please provide email and password..', 400));
   }
   // 2) Check if user exists and password is correct
-  let user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select('+password');
 
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
-  user = user.select('-password');
+  // user = user.select('-password');
   // 3) if everything ok, send token to client
   createSendToken(user, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
-  // Get token
+  // 1) Get token
   let token;
   if (
     req.headers.authorization &&
@@ -94,6 +94,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     return next(
       new AppError('The user belonging to this token does no longer exit.', 401)
     );
+
+  // 4) User might have changed password after token was issued
   if (currentUser.changedPasswordAfter(decoded.iat)) {
     return next(
       new AppError('User recently changed password! Please log in again', 401)
@@ -105,7 +107,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    // roles ['admin', 'lead-guide']. role='user'
+    // roles ['admin', 'lead-guide'], role='user'
     if (!roles.includes(req.user.role)) {
       return next(
         new AppError('You do not have permission to perform this action', 403)
@@ -129,7 +131,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     'host'
   )}/api/v1/users/resetPassword/${resetToken}`;
 
-  const message = `Forgot your password submit a patch request with your new password and i passwordConfirm to: ${resetURL} \n if you didn't forgot your password please ignore this email`;
+  const message = `Forgot your password submit a patch request with your new password and passwordConfirm to: ${resetURL} \n if you didn't forgot your password please ignore this email`;
   try {
     await sendEmail({
       email: user.email,
@@ -160,7 +162,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetExpire: { $gte: Date.now() }
+    passwordResetExpire: { $gt: Date.now() }
   });
 
   // 2) If the token has not expired and there is user, set the new password
