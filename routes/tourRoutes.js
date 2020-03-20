@@ -1,9 +1,13 @@
 const express = require('express');
 
 const router = express.Router();
+
 const tourController = require('./../controller/tourController');
 const authController = require('./../controller/authController');
 
+const reviewRouter = require('./../routes/reviewRoutes');
+
+router.use('/:tourId/reviews', reviewRouter);
 // router.param('id', tourController.checkId);
 
 router.get(
@@ -13,17 +17,31 @@ router.get(
 );
 
 router.route('/tour-stats').get(tourController.getTourStats);
-router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
-
+router
+  .route('/monthly-plan/:year')
+  .get(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide', 'guide'),
+    tourController.getMonthlyPlan
+  );
+// authController.protect,
 router
   .route('/')
-  .get(authController.protect, tourController.getAllTours)
-  .post(tourController.createNewTour);
+  .get(tourController.getAllTours)
+  .post(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.createNewTour
+  );
 
 router
   .route('/:id')
   .get(tourController.getOneTour)
-  .patch(tourController.updateTour)
+  .patch(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.updateTour
+  )
   .delete(
     authController.protect,
     authController.restrictTo('admin', 'lead-guide'),

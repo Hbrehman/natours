@@ -66,8 +66,39 @@ const tourSchema = new mongoose.Schema(
     secretTour: {
       type: Boolean,
       default: false
-    }
+    },
+    startLocation: {
+      // GeoJSON. In order for this object to be recognized geo special JSON we need type and cordiante properties
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point']
+      },
+      coordinates: [Number],
+      address: String,
+      description: String
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point']
+        },
+        coordinates: Number,
+        address: String,
+        description: String,
+        day: Number
+      }
+    ],
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User'
+      }
+    ]
   },
+
   {
     toJSON: {
       virtuals: true
@@ -77,6 +108,13 @@ const tourSchema = new mongoose.Schema(
     }
   }
 );
+
+// Virtual populate
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour', // This is the name of filed in other model, in review model in this case where the reference to the current model is stored.
+  localField: '_id' // this is how it is called in local model
+});
 
 tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7;
@@ -108,7 +146,11 @@ tourSchema.pre('save', function(next) {
 // });
 
 // Query middleware,
-// The big differecne is that the this keyword will point to current query and not current document as it was in case of document middleware
+// The big differecne is that the 'this' keyword will point to current query and not current document as it was in case of document middleware
+tourSchema.pre(/^find/, function(next) {
+  this.populate({ path: 'guides', select: '-__v' });
+  next();
+});
 tourSchema.pre(/^find/, function(next) {
   this.find({ secretTour: { $ne: true } });
   this.start = Date.now();
