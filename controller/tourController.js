@@ -1,5 +1,6 @@
 const Tour = require('./../models/tourModel');
 const catchAsync = require('./../utils/catchAsync');
+const AppError = require('./../utils/appError');
 
 const factory = require('./handlerFactory');
 
@@ -101,3 +102,74 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// '/tours-within/:distance/center/:latlng/unit/:unit'
+// '/tours-within/:233/center/:34.111745,-118.113491/unit/:mi'
+
+exports.getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  // MongoDb only recives radius in radians and to convert radius in radians we need to divide it by the radius of earth 3963.2 us radius of earth in miles and 6378.1 is the radius of earth in km
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+
+  if (!lat || !lng) {
+    return next(
+      new AppError(
+        'Please provide latitude and longitude in the format lat, lng',
+        400
+      )
+    );
+  }
+
+  const tours = await Tour.find({
+    // $geoWithin is a geospatial mongoDb operator.
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } }
+  });
+
+  // console.log(distance, lat, lng, unit);
+  res.status(200).json({
+    results: tours.length,
+    status: 'success',
+    data: {
+      data: tours
+    }
+  });
+});
+
+module.exports.getDistances = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+  if (!lat || !lng) {
+    return next(
+      new AppError(
+        'Please provide latitude and longitude in the format lat, lng',
+        400
+      )
+    );
+  }
+
+  // geoNear is only one stage in  aggregiation pipeline and this one always need to be the first one in the pipeline and it contains atleast one of the fields that contain geoSpatial index and if we have only one field with geoSpatial index then $geoNear will automatically use that but if we have multiple fields with geoSpatial index then we would have to use keys parameter in order to specify which one we want to use
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        // keys: 'startLocation',
+        near: {
+          type: 'Point',
+          coordinates: [lng * 1, lat * 1]
+        },
+        distanceField: 'distance'
+      }
+    }
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: distances
+    }
+  });
+});
+
+// Teri ana ka sooraj jahan marzi chamky
+// meri hudod main chamka to doob jay ga

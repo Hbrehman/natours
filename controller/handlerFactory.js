@@ -69,6 +69,7 @@ exports.getAll = Model =>
       .limiting()
       .pagination();
     const doc = await apiFeatuer.query;
+    // const doc = await apiFeatuer.query.explain(); to get extended information about query
 
     // SEND RESPONSE
     res.status(200).json({
