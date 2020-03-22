@@ -2,13 +2,13 @@
 doctype html
 html
     head
-        meta(charset='UTF-8')
-        meta(name='viewport' content='width=device-width, initial-scale=1.0')
-        link(rel='stylesheet', href='css/style.css')
-        link(rel='shortcut icon' type='image/png' href='img/favicon.png')
-        link(href='https://fonts.googleapis.com/css?family=Lato:300,300i,700' rel='stylesheet')
-    
-        title Natours | #{title}
+        block head
+            meta(charset='UTF-8')
+            meta(name='viewport' content='width=device-width, initial-scale=1.0')
+            link(rel='stylesheet', href='/css/style.css')
+            link(rel='shortcut icon' type='/image/png' href='/img/favicon.png')
+            link(href='https://fonts.googleapis.com/css?family=Lato:300,300i,700' rel='stylesheet')
+            title Natours | #{title}
 
     body
 
@@ -31,3 +31,4 @@ html
         //- we can execute javaScript code directly here like tour.toUppercase() then this code would be called buffered code
         //- and if we write javaScript like this - const x = 3; then this would be called non-buffered code
         //- #{This is interpolation syntax}
+    script(src='/js/mapbox.js')
