@@ -2,6 +2,9 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 const morgan = require('morgan');
+const helmet = require('helmet');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
@@ -12,7 +15,8 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controller/errorController');
 
 const app = express();
-
+app.use(helmet());
+app.use(cors());
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -34,8 +38,14 @@ app.use('/api', limiter);
 
 console.log(process.env.NODE_ENV);
 
-app.use(express.json());
-
+// Body Parser, reading data from body into req.body
+app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
+app.use((req, res, next) => {
+  // req.requestTime = new Date.toISOString();
+  console.log(req.cookies);
+  next();
+});
 // This process is called mounting
 app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
@@ -49,3 +59,6 @@ app.all('*', (req, res, next) => {
 app.use(globalErrorHandler);
 
 module.exports = app;
+
+//  Commad to open security disabled chrome tab
+// chrome.exe --user-data-dir="C:/Chrome dev session" --disable-web-security
