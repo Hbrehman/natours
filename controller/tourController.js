@@ -1,10 +1,60 @@
+const multer = require('multer');
+const sharp = require('sharp');
 const Tour = require('./../models/tourModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
-
 const factory = require('./handlerFactory');
 
-exports.createNewTour = factory.createOne(Tour);
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image please upload only images', 400), false);
+  }
+};
+
+const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
+
+exports.resizeTourImages = async (req, res, next) => {
+  if (!req.files.imageCover || !req.files.images) return next();
+
+  // Processing of cover image
+  req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
+  await sharp(req.files.imageCover[0].buffer)
+    .resize(2000, 1333)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/tours/${req.body.imageCover}`);
+
+  // Other images
+
+  req.body.images = [];
+  await Promise.all(
+    req.files.images.map(async (image, i) => {
+      const fileName = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
+      await sharp(image.buffer)
+        .resize(2000, 1333)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 })
+        .toFile(`public/img/tours/${fileName}`);
+      req.body.images.push(fileName);
+    })
+  );
+
+  next();
+};
+
+// to upload a mix of images
+exports.uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 3 }
+]);
+// To upload only one image
+// upload.single('image); will produce req.file
+// and to upload multiple images
+// upload.array('images', 5); // produces req.files
 
 exports.aliasTopTours = (req, res, next) => {
   req.query.limit = '5';
@@ -13,10 +63,9 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
+exports.createNewTour = factory.createOne(Tour);
 exports.getAllTours = factory.getAll(Tour);
-
 exports.getOneTour = factory.getOne(Tour, { path: 'reviews' });
-
 exports.updateTour = factory.updateOne(Tour);
 exports.deleteTour = factory.deleteOne(Tour);
 

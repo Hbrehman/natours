@@ -5,7 +5,7 @@ const _ = require('underscore');
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
-const sendEmail = require('./../utils/email');
+const Email = require('./../utils/email');
 
 const signToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -50,6 +50,9 @@ exports.signup = catchAsync(async (req, res, next) => {
       'photo'
     ])
   );
+  const url = `${req.protocol}://${req.get('host')}/me`;
+  console.log(url);
+  await new Email(newUser, url).sendWelcome();
   createSendToken(newUser, 201, res);
 });
 
@@ -168,11 +171,11 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
   const message = `Forgot your password submit a patch request with your new password and passwordConfirm to: ${resetURL} \n if you didn't forgot your password please ignore this email`;
   try {
-    await sendEmail({
-      email: user.email,
-      subject: 'Your password reset token (valid for 10 minutes)',
-      message
-    });
+    // await sendEmail({
+    //   email: user.email,
+    //   subject: 'Your password reset token (valid for 10 minutes)',
+    //   message
+    // });
   } catch (err) {
     user.passwordResetToken = undefined;
     user.passwordResetExpire = undefined;
