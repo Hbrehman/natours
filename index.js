@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const compression = require('compression');
 // const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const tourRouter = require('./routes/tourRoutes');
@@ -50,6 +51,9 @@ app.use((req, res, next) => {
   // console.log(req.cookies);
   next();
 });
+
+app.use(compression());
+
 // This process is called mounting
 app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
