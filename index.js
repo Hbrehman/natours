@@ -4,7 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const compression = require('compression');
-// const cors = require('cors');
+const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -19,7 +19,18 @@ const globalErrorHandler = require('./controller/errorController');
 const app = express();
 
 app.use(helmet());
-// app.use(cors());
+// Implement CORS
+app.use(cors());
+// Access-Control-Allow-Origin *
+// api.natours.com, front-end natours.com
+// if we only want to allow natours.com to access our api then
+// app.use(cors({
+// origin: 'https://www.natours.com'
+// }));
+
+app.options('*', cors());
+// app.options('/api/v1/tours/:id', cors());
+
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
