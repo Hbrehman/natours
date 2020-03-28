@@ -29,9 +29,9 @@ mongoose
   });
 
 // console.log(process.env);
-
-const server = app.listen(3000, () => {
-  console.log('Listening on port 3000');
+const port = process.env.PORT;
+const server = app.listen(port, () => {
+  console.log(`Listening on port  ${port}`);
 });
 
 process.on('unhandledRejection', err => {
@@ -39,5 +39,12 @@ process.on('unhandledRejection', err => {
   console.log(err.name, err.message);
   server.close(() => {
     process.exit(1);
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM RECEIVED, Shutting down gracefully');
+  server.close(() => {
+    console.log('Process Terminated');
   });
 });
